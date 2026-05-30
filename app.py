@@ -1,12 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from openai import OpenAI
 import os
 
 app = FastAPI()
 
-# Fix CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,8 +12,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-api_key = os.getenv("OPENAI_API_KEY")
 
 class ImageRequest(BaseModel):
     booth_size: int
@@ -34,12 +30,19 @@ def health():
 
 @app.post("/generate-image")
 async def generate_image(request: ImageRequest):
+    # Try to import OpenAI only when needed
+    try:
+        from openai import OpenAI
+    except ImportError:
+        return {"error": "OpenAI module not installed"}
+    
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return {"error": "OpenAI API key not set"}
     
     client = OpenAI(api_key=api_key)
     
-    prompt = f"Professional {request.booth_size} square meter {request.booth_type} exhibition booth in {request.city}, {request.country}. Main brand color: {request.color}. Modern, well-lit, with reception counter and product displays."
+    prompt = f"Professional {request.booth_size} sqm {request.booth_type} exhibition booth in {request.city}, {request.country}. Color: {request.color}"
     
     response = client.images.generate(
         model="dall-e-3",
