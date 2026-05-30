@@ -6,6 +6,7 @@ import os
 
 app = FastAPI()
 
+# Fix CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,6 +24,10 @@ class ImageRequest(BaseModel):
     country: str
     color: str
 
+@app.get("/")
+def root():
+    return {"message": "AI Booth Agent Running"}
+
 @app.get("/health")
 def health():
     return {"status": "healthy"}
@@ -30,11 +35,11 @@ def health():
 @app.post("/generate-image")
 async def generate_image(request: ImageRequest):
     if not api_key:
-        return {"error": "OpenAI API key not configured"}
+        return {"error": "OpenAI API key not set"}
     
     client = OpenAI(api_key=api_key)
     
-    prompt = f"Professional {request.booth_size} sqm {request.booth_type} exhibition booth in {request.city}, {request.country}. Main color: {request.color}. Modern design with reception counter, LED lights, product shelves."
+    prompt = f"Professional {request.booth_size} square meter {request.booth_type} exhibition booth in {request.city}, {request.country}. Main brand color: {request.color}. Modern, well-lit, with reception counter and product displays."
     
     response = client.images.generate(
         model="dall-e-3",
@@ -43,7 +48,3 @@ async def generate_image(request: ImageRequest):
     )
     
     return {"image_url": response.data[0].url}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
