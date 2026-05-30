@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from openai import OpenAI
+import os
 
 app = FastAPI()
 
@@ -11,13 +14,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"message": "Hello from AI Booth Agent"}
+api_key = os.getenv("OPENAI_API_KEY")
+openai_client = OpenAI(api_key=api_key) if api_key else None
+
+class ImageRequest(BaseModel):
+    booth_size: int
+    booth_type: str
+    city: str
+    country: str
+    color: str
 
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+@app.post("/generate-image")
+async def generate_image(request: ImageRequest):
+    if not openai_client:
+        return {"error": "OpenAI API key not configured"}
+    
+    prompt = f"Professional {request.booth_size} sqm {request.booth_type} exhibition booth in {request.city}, {request.country}. Main color: {request.color}. Modern design with reception counter, LED lights, product shelves."
+    
+    response = openai_client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size="1024x1024"
+    )
+    
+    return {"image_url": response.data[0].url}
 
 if __name__ == "__main__":
     import uvicorn
