@@ -15,7 +15,6 @@ app.add_middleware(
 )
 
 api_key = os.getenv("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=api_key) if api_key else None
 
 class ImageRequest(BaseModel):
     booth_size: int
@@ -30,12 +29,14 @@ def health():
 
 @app.post("/generate-image")
 async def generate_image(request: ImageRequest):
-    if not openai_client:
+    if not api_key:
         return {"error": "OpenAI API key not configured"}
+    
+    client = OpenAI(api_key=api_key)
     
     prompt = f"Professional {request.booth_size} sqm {request.booth_type} exhibition booth in {request.city}, {request.country}. Main color: {request.color}. Modern design with reception counter, LED lights, product shelves."
     
-    response = openai_client.images.generate(
+    response = client.images.generate(
         model="dall-e-3",
         prompt=prompt,
         size="1024x1024"
