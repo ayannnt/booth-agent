@@ -12,11 +12,11 @@ app.add_middleware(
 )
 
 @app.get("/")
-async def root():
-    return {"message": "AI Exhibition Booth Agent is running"}
+def root():
+    return {"message": "Hello from AI Booth Agent"}
 
 @app.get("/health")
-async def health():
+def health():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
